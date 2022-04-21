@@ -61,12 +61,20 @@ export class Repository<Entity = any> implements OnModuleInit {
       .then((x) => x.toArray().map((e) => transformEntity(this.target, e)));
   }
 
+  async findAndCount(
+    entity: FindQuery<Entity>,
+    options?: mapping.FindDocInfo,
+  ): Promise<number> {
+    return this.mapper
+      .find(entity, options, { logged: true })
+      .then((x) => x.toArray().length);
+  }
+
   async save(
     entity: Partial<Entity> | Partial<Entity>[],
     options: mapping.InsertDocInfo = {},
   ): Promise<Entity | Entity[]> {
     const saveFunc = async (entity: Entity) => {
-      console.log('this.mapper', this.mapper);
       await this.mapper.insert(entity, options);
       return transformEntity(this.target, entity);
     };
@@ -82,6 +90,47 @@ export class Repository<Entity = any> implements OnModuleInit {
     return Array.isArray(entity)
       ? saveMultipleFunc(entity as any)
       : saveFunc(entity as any);
+  }
+
+  async update(
+    entity: Partial<Entity>,
+    options: mapping.UpdateDocInfo = {},
+  ): Promise<mapping.Result<Entity>> {
+    return this.mapper.update(entity, options);
+  }
+
+  async remove(
+    entity: FindQuery<Entity>,
+    docInfo?: mapping.RemoveDocInfo,
+  ): Promise<mapping.Result<Entity>> {
+    return this.mapper.remove(entity, docInfo);
+  }
+
+  batchSave(
+    entities: Entity[],
+    docInfo?: mapping.InsertDocInfo,
+  ): mapping.ModelBatchItem[] {
+    return entities.map((entity) =>
+      this.mapper.batching.insert(entity, docInfo),
+    );
+  }
+
+  batchUpdate(
+    entities: Entity[],
+    docInfo?: mapping.InsertDocInfo,
+  ): mapping.ModelBatchItem[] {
+    return entities.map((entity) =>
+      this.mapper.batching.update(entity, docInfo),
+    );
+  }
+
+  batchRemove(
+    entities: FindQuery<Entity>[],
+    docInfo?: mapping.RemoveDocInfo,
+  ): mapping.ModelBatchItem[] {
+    return entities.map((entity) =>
+      this.mapper.batching.remove(entity, docInfo),
+    );
   }
 }
 
